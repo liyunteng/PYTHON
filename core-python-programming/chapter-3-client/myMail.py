@@ -4,7 +4,7 @@
 # Description: sendmail by smtp, recvmail by pop3
 
 # Copyright (C) 2018 liyunteng
-# Last-Updated: <2018/05/26 03:03:43 liyunteng>
+# Last-Updated: <2018/06/04 19:10:09 liyunteng>
 
 from smtplib import SMTP
 from poplib import POP3
@@ -18,7 +18,7 @@ SMTPHOST = 'smtp.163.com'
 POPHOST = 'pop.163.com'
 
 username = 'li_yunteng@163.com'
-password = 'yun1988'                # 163邮箱为smtp授权码
+password = 'xxx'                # 163邮箱为smtp授权码
 
 # smtp
 sender = 'li_yunteng@163.com'
@@ -81,7 +81,7 @@ def print_mail(msg, multi=False):
     print('Content-Type: ' + content_type)
 
     if msg.is_multipart():
-        parts = msg.get_payload()
+        parts = msg.get_payload
         for n, part in enumerate(parts):
             print('part %s' % n)
             print('----------')
