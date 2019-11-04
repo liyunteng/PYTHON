@@ -3,11 +3,8 @@
 
 # test_lhs.py - test_lhs
 
-# Author : liyunteng <liyunteng@streamocean.com>
-# Date   : 2019/10/16
+# Date   : 2019/11/03
 
-# Copyright (C) 2019 StreamOcean, Inc.
-# All rights reserved.
 import json
 import time
 import socket
@@ -15,7 +12,7 @@ import threading
 from urllib import request
 
 
-class httpClient:
+class HttpClient:
     def __init__(self, url, timeout=10):
         self.url = url
         self.timeout = 10
