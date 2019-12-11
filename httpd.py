@@ -12,6 +12,10 @@ app = Flask(__name__)
 hosts = []
 @app.route('/', methods=['GET', 'POST'])
 def index():
+    if request.environ['REQUEST_METHOD'] == 'POST':
+        # print(request.get_json())
+        print(request.get_data())
+
     host = {
         'host': request.environ['REMOTE_ADDR'],
         'port': request.environ['REMOTE_PORT'],
