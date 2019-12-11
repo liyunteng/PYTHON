@@ -27,19 +27,23 @@ class Callable:
     @property
     def value(self):
         '''I'm the 'x' property.'''
-        return self.value
+        return self._value
 
     @value.setter
     def value(self, v):
-        self.value = v
+        self._value = v
 
     @value.deleter
     def value(self):
-        del self.value
+        del self._value
 
     @classmethod
     def classmethod(cls):
-        print('Callable')
+        print('Callable classmethod')
+
+    @staticmethod
+    def staticmethod():
+        print('Callable staticmethod')
 
 
 def testAbs():
@@ -246,6 +250,24 @@ def testPow():
     print('testPow: ', 2 ** 3)
 
 
+def testVars():
+    c = Callable()
+    print('testVars: ', vars(c))
+    print('testVars: ', dir(c))
+
+
+def testZip():
+    s1 = [1, 2, 3, 4]
+    s2 = ['a', 'b', 'c']
+    print('testZip: ', list(zip(s1, s2)))
+
+
+def testImport():
+    # import os
+    os = __import__('os', globals(), locals(), [], 0)
+    print('testImport: ', dir(os))
+
+
 def main():
     print(dir(__builtins__))
     testAbs()
@@ -274,6 +296,9 @@ def main():
     testMin()
     testOpen()
     testPow()
+    testVars()
+    testZip()
+    testImport()
     # testBreakpoint()
 
 
