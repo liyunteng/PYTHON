@@ -28,7 +28,6 @@ class FooClass(object):
         '''apply + operator to argument'''
         return x+x
 
-
 f = FooClass('lyt')
 f.showname()
 f.showver()
