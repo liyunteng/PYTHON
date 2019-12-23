@@ -28,7 +28,7 @@ async def wget(host):
         # print('%s header > %s' % (host, line.decode('utf-8').rstrip()))
     print('wget %s done! (%s)' % (host, threading.currentThread()))
     writer.close()
-    reader.close()
+    # reader.close()
 
 
 hosts = [

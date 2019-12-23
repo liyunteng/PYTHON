@@ -33,6 +33,7 @@ int fac(int n)
   return n * fac(n-1);
 }
 
+/* argument */
 int test(int a, float b, char *c)
 {
   printf("a=%d\n", a);
@@ -40,6 +41,8 @@ int test(int a, float b, char *c)
   printf("c=%s\n", c);
   return 100;
 }
+
+/* struct */
 static test_t *g_test = NULL;
 int setTest(test_t *test)
 {
@@ -63,6 +66,44 @@ test_t *getTest(int id)
     if (g_test->id == id)
         return g_test;
     return NULL;
+}
+
+/* callback */
+typedef int (*fn)(int, int);
+static fn fns[10];
+int register_callback(fn f)
+{
+    for (int i = 0; i < 10; i++) {
+        if (fns[i] == NULL) {
+            fns[i] = f;
+            return i;
+        }
+    }
+    return -1;
+}
+
+void run_callback()
+{
+    for (int i = 0; i < 10; i++) {
+        if (fns[i] != NULL) {
+            printf("%d\n", fns[i](i, i));
+        }
+    }
+}
+
+/* struct + callback */
+struct callback_all {
+    int (*callback1)(int);
+    int (*callback2)(int);
+    int (*callback3)(int);
+};
+
+int run_callback_all(struct callback_all fs)
+{
+    printf("callback1: %d\n", fs.callback1(1));
+    printf("callback2: %d\n", fs.callback2(2));
+    printf("callback3: %d\n", fs.callback3(3));
+    return 0;
 }
 
 int main(void)
