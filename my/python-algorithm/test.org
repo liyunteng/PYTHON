@@ -1,0 +1,6 @@
+#+BEGIN_EXPORT latex
+\begin{equation*}
+  p = \sum_{n=1}^Na_n
+\end{equation*}
+
+#+END_EXPORT
