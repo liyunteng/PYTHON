@@ -75,6 +75,7 @@ class OnCall:
 
             # ai nodes
             urls = [
+                {'uri':'d/9CWBz0bi3/ou-zhou-jie-dian-zhu-ji-jian-kong?orgId=1&var-job=prod-eu-gpu-node1', 'name': 'eu-node1'},
                 {'uri':'d/9CWBz0bi3/ou-zhou-jie-dian-zhu-ji-jian-kong?orgId=1&var-job=prod-eu-gpu-node2', 'name': 'eu-node2'},
                 {'uri': 'd/9CWBz0bil/mei-guo-jie-dian-zhu-ji-jian-kong?orgId=1&var-job=prod-us-gpu-node4', 'name': 'us-node4'},
                 {'uri': 'd/9CWBz0bil/mei-guo-jie-dian-zhu-ji-jian-kong?orgId=1&var-job=prod-us-gpu-node5', 'name': 'us-node5'},
@@ -121,20 +122,12 @@ class OnCall:
         }
         hosts = [
             {
-                'host': '10.100.2.89',
-                'username': 'ubuntu',
+                'host': '10.160.2.27',
+                'username': 'root',
                 'port': 32222,
                 'key': None,
                 'jump': jump,
-                'name': 'us-1'
-            },
-            {
-                'host': '10.100.2.153',
-                'username': 'ubuntu',
-                'port': 32222,
-                'key': None,
-                'jump': jump,
-                'name': 'us-2'
+                'name': 'eu-node1-ps'
             },
             {
                 'host': '10.160.1.73',
@@ -142,7 +135,23 @@ class OnCall:
                 'port': 32222,
                 'key': None,
                 'jump': jump,
-                'name': 'ou-1'
+                'name': 'eu-node2-ps'
+            },
+            {
+                'host': '10.100.2.89',
+                'username': 'ubuntu',
+                'port': 32222,
+                'key': None,
+                'jump': jump,
+                'name': 'us-node4-ps'
+            },
+            {
+                'host': '10.100.2.153',
+                'username': 'ubuntu',
+                'port': 32222,
+                'key': None,
+                'jump': jump,
+                'name': 'us-node5-ps'
             },
             {
                 'host': '52.81.37.85',
@@ -150,7 +159,7 @@ class OnCall:
                 'port': 32222,
                 'key': os.path.join('./', 'id_rsa'),
                 'jump': None,
-                'name': 'china-1'
+                'name': 'cn-node1-ps'
             },
         ]
 
@@ -194,6 +203,7 @@ class OnCall:
                     # r = str(stdout.read(), encoding='utf-8')
 
                     s = ssh.invoke_shell()
+                    r = self._ssh_shell_recv(s)
                     s.send('hostname; ps aux | grep python | grep -v grep\r\n')
                     r = self._ssh_shell_recv(s)
 
@@ -325,7 +335,7 @@ class OnCall:
             n = '晚上'
         msg = '{:04d}/{:02d}/{:02d} {:02d}:{:02d}:{:02d} 周{} {} 打卡'.format(
             tm.tm_year, tm.tm_mon, tm.tm_mday, tm.tm_hour, tm.tm_min,
-            tm.tm_sec, n, weekday[tm.tm_wday])
+            tm.tm_sec, weekday[tm.tm_wday], n)
 
         self.send_text_weixin(self.weixin_robot_url, msg)
         self.capture_images()
