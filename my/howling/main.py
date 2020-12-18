@@ -14,7 +14,7 @@ def read_wav(file_path):
     framerate,data = wavfile.read(file_path)
     nframes = len(data)
     nchannels = 1
-    # data = data / np.max(data)
+    # data = data / 32768.0
     # data = np.reshape(data, [nframes, nchannels])
     print('framerate: {}\nnchannels: {}\nnframes: {}\n'.format(
         framerate, nchannels, nframes))
@@ -26,63 +26,65 @@ def read_wav(file_path):
 def process1(figure, t, data):
     N = 160
     FS = 8000
-    THRESHOLD = 2000
+    THRESHOLD = 0.1
     COUNTER = 100
-    NQ = 50
+    NQ = 30
 
+    counter = 0
     begin = 0
     end = N
     pre = [ 0 ] * N
     C = [ 0 ] * N
     S = [ 0 ] * N
-    counter = 0
     out = []
     A = [ 0 ] * N
     V = []
 
+
+    data = data / 32768.0
     while begin < len(data):
         print('{} -- {}'.format(begin, end))
-        # 1. FFT = fft_data
         fft_data = nf.fft(data[begin:end]) / (end - begin)
         v = [ 0 ] * len(fft_data)
         for x in range(0, len(fft_data)):
-            # 2. V(f) = V
             v[x] = fft_data[x] - pre[x]
             pre[x] = fft_data[x]
         V.append(v)
-        if (len(V) > NQ):
+        if len(V) > NQ:
             del V[0]
 
-        # 3. moving average of V(f) save in a
         for x in range(0, len(fft_data)):
             fa = []
             for v in V:
                 fa.append(v[x])
 
-            # w = np.ones(len(V)) / len(V)
-            #a = np.convolve(fa, w, mode='same')
-            #A[x] = np.mean(fa)
             std = np.std(fa)
             S[x] = std
-            if std < THRESHOLD:
+            if std > THRESHOLD:
                 C[x] += 1
+                fft_data[x] = 0
                 # print('sec: {} std: {} c: {} counter:{} freq: {}'.format(
                 #     counter * 0.02, std, C[x], counter,
                 #     x * (1.0 * 8000)/len(fft_data)))
             else:
                 C[x] -= 1
-                fft_data[x] = 0
+                # fft_data[x] = 0
+                # print('sec: {} std: {} c: {} counter: {} freq: {}'.format(
+                #     counter * 0.02, std, C[x], counter,
+                #     x * (1.0 * 8000) / len(fft_data)
+                # ))
+            if C[x] == NQ:
+                pass
+                # fft_data[x] = 0
+                # C[x] -= 1
                 # print('sec: {} std: {} c: {} counter: {} freq: {}'.format(
                 #     counter * 0.02, std, C[x], counter,
                 #     x * (1.0 * 8000) / len(fft_data)
                 # ))
 
-            if C[x] == COUNTER:
-                pass
-
         freqs = np.abs(nf.fftfreq(end-begin, 1.0 / 8000))
         samples = np.arange(0, end-begin)
-        if True:
+        if counter % 50 == 0:
             plt.figure(figure)
 
             plt.subplot(321)
@@ -128,8 +130,7 @@ def process1(figure, t, data):
             # plt.grid(linestyle=':')
             # plt.bar(freqs, C)
 
-        # data[begin:end] = nf.ifft(fft_data) * (end - begin).real
-        out += (nf.ifft(fft_data).real * (end - begin)).tolist()
+        out += (nf.ifft(fft_data).real * (end -begin) * 32768.0).tolist()
 
         begin = end
         if end + N > len(data):
@@ -139,21 +140,7 @@ def process1(figure, t, data):
         counter += 1
 
     print('counter: {}\n'.format(counter))
-    # plt.figure('x')
-    # plt.subplot(211)
-    # plt.xlabel('sample')
-    # plt.ylabel('STD(f)')
-    # # plt.plot(freqs, S)
-    # plt.plot(np.arange(0, counter), S)
-
-    # freqs = nf.fftfreq(N, 1.0 / 8000)
-    # plt.subplot(212)
-    # plt.xlabel('Freq')
-    # plt.ylabel('counter')
-    # plt.bar(freqs, C)
-    # plt.show()
-
-    wavfile.write('/Users/lyt/{}_out.wav'.format(figure), 8000, np.int16(out))
+    wavfile.write('./{}_out.wav'.format(figure), 8000, np.int16(out))
     return (t, out)
 
 def show2(figure, t1, data1, t2, data2):
@@ -205,11 +192,11 @@ def show2(figure, t1, data1, t2, data2):
     plt.specgram(data2, Fs=8000, scale_by_freq=True, sides='default')
 
 def main():
-    t1, data1  = read_wav('/Users/lyt/bad.wav')
+    t1, data1  = read_wav('./bad.wav')
     t2, data2 = process1('bad', t1, data1)
     show2('bad_a', t1, data1, t2, data2)
 
-    t1, data1  = read_wav('/Users/lyt/good.wav')
+    t1, data1  = read_wav('./good.wav')
     t2, data2 = process1('good', t1, data1)
     show2('good_a', t1, data1, t2, data2)
     plt.show()

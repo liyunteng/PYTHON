@@ -24,7 +24,7 @@ def read_wav(file_path):
     return(t, data)
 
 def process1(figure, t, data):
-    FREQS = [(800, 1500)]
+    FREQS = [(750, 1100)]
     SN = 8000
     fft_data = nf.fft(data) / len(data)
 
@@ -45,7 +45,7 @@ def process1(figure, t, data):
                 fft_data[x] = 0
 
     data = nf.ifft(fft_data) * len(data)
-    wavfile.write('/Users/lyt/{}_out.wav'.format(figure), SN, np.int16(data))
+    wavfile.write('./{}_out.wav'.format(figure), SN, np.int16(data))
     return (t, data)
 
 def show2(figure, t1, data1, t2, data2):
@@ -97,7 +97,7 @@ def show2(figure, t1, data1, t2, data2):
     plt.specgram(data2, Fs=8000, scale_by_freq=True, sides='default')
 
 def main():
-    t1, data1  = read_wav('/Users/lyt/bad.wav')
+    t1, data1  = read_wav('./bad.wav')
     t2, data2 = process1('remove', t1, data1)
     show2('remove_a', t1, data1, t2, data2)
     plt.show()
