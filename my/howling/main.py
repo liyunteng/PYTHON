@@ -27,18 +27,16 @@ def read_wav(file_path):
 def process1(figure, t, data):
     N = 160
     FS = 8000.0
-    THRESHOLD = 0.05
+    THRESHOLD = 0.1
     NQ = 30
-    ORDER=4
+    ORDER = 4
 
     counter = 0
     begin = 0
     end = N
     pre = [ 0 ] * N
-    C = [ 0 ] * N
     out = []
-    A = [ 0 ] * N
-    P = []
+    C = [ 0 ] * N
     V = []
     S = []
 
@@ -61,7 +59,7 @@ def process1(figure, t, data):
             del V[0]
 
         # peaks = signal.find_peaks_cwt(fft_data, np.arange(1, len(fft_data)+1))
-        peaks,prop = signal.find_peaks(fft_data, prominence=0.0001, distance=10)
+        peaks,prop = signal.find_peaks(fft_data, distance=1)
         s = [ 0 ] * len(fft_data)
         for x in range(0, len(fft_data)):
             fa = []
@@ -71,39 +69,52 @@ def process1(figure, t, data):
             # w = np.ones(len(fa)) / len(fa)
             # a = np.convolve(fa, w, mode='same')
 
-            std = np.std(fa)
-            # std = np.std(a)
-            s[x] = std
-            if std > THRESHOLD:
+            s[x] = np.std(fa)
+            # s[x] = np.std(a)
+            if s[x] > THRESHOLD:
                 C[x] += 1
             else:
                 C[x] -= 1
 
             # if C[x] == len(fa) and x+1 not in peaks:
-                # plt.figure('error')
-                # plt.subplot(111)
-                # plt.xlabel('freq')
-                # plt.ylabel('power')
-                # plt.plot(np.arange(0, len(fft_data)), fft_data)
-                # plt.plot(peaks, fft_data[peaks], '*')
-                # print('###### {} not in {}'.format(x+1, peaks))
-                # plt.show()
-            if x+1 in peaks and C[x] == len(fa):
-                freq = x * (1.0 * FS) / len(fft_data)
+            #     plt.figure('error')
+            #     plt.subplot(111)
+            #     plt.xlabel('freq')
+            #     plt.ylabel('power')
+            #     plt.plot(np.arange(0, len(fft_data)), fft_data)
+            #     plt.plot(peaks, fft_data[peaks], '*')
+            #     print('###### {} not in {}'.format(x+1, peaks))
+            #     plt.show()
+
+            if x in peaks and C[x] == len(fa):
+                freq = x * FS / len(fft_data)
+                if freq == 0.0:
+                    freq = 1.0
                 if freq <= FS/2:
-                    if freq == 0.0:
-                        freq = 1.0
+                    # plt.subplot(211)
+                    # plt.xlabel('freq')
+                    # plt.plot(nf.fftfreq(end-begin, 1.0/FS), fft_data)
+
+                    # b, a = signal.iirnotch(2*freq/FS, 30.0)
+                    # f, h = signal.freqz(b, a, fs=FS)
+                    # fft_data = signal.filtfilt(b, a, fft_data)
+
+                    # print('freq: {}'.format(freq))
+                    # plt.subplot(212)
+                    # plt.xlabel('freq')
+                    # plt.plot(nf.fftfreq(end-begin, 1.0/FS), fft_data)
+                    # plt.show()
+
+
                     b, a = signal.butter(ORDER, 2*freq/FS, 'lowpass')
                     fft_data = signal.filtfilt(b, a, fft_data)
-                    b, a = signal.butter(ORDER, 2*(freq + 50.0)/FS, 'highpass')
+                    b, a = signal.butter(ORDER, 2*(freq + 1.0)/FS, 'highpass')
                     fft_data = signal.filtfilt(b, a, fft_data)
-                    # b, a = signal.butter(ORDER, [2*freq/FS, 2*(freq + 200.0)/FS], 'bandstop')
-                    # fft_data = signal.filtfilt(b, a, fft_data)
                     print('sec: {} std: {} c: {} counter: {} freq: {}'.format(
-                        counter * 0.02, std, C[x], counter, freq))
+                        counter * 0.02, s[x], C[x], counter, freq))
 
         S.append(s)
-        print(C)
+        # print(C)
 
         freqs = np.abs(nf.fftfreq(end-begin, 1.0 / FS))
         samples = np.arange(0, end-begin)
@@ -220,7 +231,7 @@ def show2(figure, t1, data1, t2, data2):
     plt.specgram(data2, Fs=8000, scale_by_freq=True, sides='default')
 
 def main():
-    t1, data1  = read_wav('./bad.wav')
+    t1, data1  = read_wav('./good_out.wav')
     t2, data2 = process1('bad', t1, data1)
     show2('bad_a', t1, data1, t2, data2)
 
