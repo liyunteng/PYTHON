@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 # main.py - main
@@ -7,6 +7,7 @@
 import numpy as np
 import numpy.fft as nf
 from scipy.io import wavfile
+from scipy import signal
 import matplotlib.pyplot as plt
 
 
@@ -25,21 +26,21 @@ def read_wav(file_path):
 
 def process1(figure, t, data):
     N = 160
-    FS = 8000
-    THRESHOLD = 0.1
-    COUNTER = 100
+    FS = 8000.0
+    THRESHOLD = 0.05
     NQ = 30
+    ORDER=4
 
     counter = 0
     begin = 0
     end = N
     pre = [ 0 ] * N
     C = [ 0 ] * N
-    S = [ 0 ] * N
     out = []
     A = [ 0 ] * N
+    P = []
     V = []
-
+    S = []
 
     data = data / 32768.0
     while begin < len(data):
@@ -51,38 +52,60 @@ def process1(figure, t, data):
             pre[x] = fft_data[x]
         V.append(v)
         if len(V) > NQ:
+            for x in range(0, len(S[0])):
+                if S[0][x] > THRESHOLD:
+                    C[x] -= 1
+                else:
+                    C[x] += 1
+            del S[0]
             del V[0]
 
+        # peaks = signal.find_peaks_cwt(fft_data, np.arange(1, len(fft_data)+1))
+        peaks,prop = signal.find_peaks(fft_data, prominence=0.0001, distance=10)
+        s = [ 0 ] * len(fft_data)
         for x in range(0, len(fft_data)):
             fa = []
             for v in V:
                 fa.append(v[x])
 
+            # w = np.ones(len(fa)) / len(fa)
+            # a = np.convolve(fa, w, mode='same')
+
             std = np.std(fa)
-            S[x] = std
+            # std = np.std(a)
+            s[x] = std
             if std > THRESHOLD:
                 C[x] += 1
-                fft_data[x] = 0
-                # print('sec: {} std: {} c: {} counter:{} freq: {}'.format(
-                #     counter * 0.02, std, C[x], counter,
-                #     x * (1.0 * 8000)/len(fft_data)))
             else:
                 C[x] -= 1
-                # fft_data[x] = 0
-                # print('sec: {} std: {} c: {} counter: {} freq: {}'.format(
-                #     counter * 0.02, std, C[x], counter,
-                #     x * (1.0 * 8000) / len(fft_data)
-                # ))
-            if C[x] == NQ:
-                pass
-                # fft_data[x] = 0
-                # C[x] -= 1
-                # print('sec: {} std: {} c: {} counter: {} freq: {}'.format(
-                #     counter * 0.02, std, C[x], counter,
-                #     x * (1.0 * 8000) / len(fft_data)
-                # ))
 
-        freqs = np.abs(nf.fftfreq(end-begin, 1.0 / 8000))
+            # if C[x] == len(fa) and x+1 not in peaks:
+                # plt.figure('error')
+                # plt.subplot(111)
+                # plt.xlabel('freq')
+                # plt.ylabel('power')
+                # plt.plot(np.arange(0, len(fft_data)), fft_data)
+                # plt.plot(peaks, fft_data[peaks], '*')
+                # print('###### {} not in {}'.format(x+1, peaks))
+                # plt.show()
+            if x+1 in peaks and C[x] == len(fa):
+                freq = x * (1.0 * FS) / len(fft_data)
+                if freq <= FS/2:
+                    if freq == 0.0:
+                        freq = 1.0
+                    b, a = signal.butter(ORDER, 2*freq/FS, 'lowpass')
+                    fft_data = signal.filtfilt(b, a, fft_data)
+                    b, a = signal.butter(ORDER, 2*(freq + 50.0)/FS, 'highpass')
+                    fft_data = signal.filtfilt(b, a, fft_data)
+                    # b, a = signal.butter(ORDER, [2*freq/FS, 2*(freq + 200.0)/FS], 'bandstop')
+                    # fft_data = signal.filtfilt(b, a, fft_data)
+                    print('sec: {} std: {} c: {} counter: {} freq: {}'.format(
+                        counter * 0.02, std, C[x], counter, freq))
+
+        S.append(s)
+        print(C)
+
+        freqs = np.abs(nf.fftfreq(end-begin, 1.0 / FS))
         samples = np.arange(0, end-begin)
         if counter % 50 == 0:
             plt.figure(figure)
@@ -116,13 +139,13 @@ def process1(figure, t, data):
             plt.xlabel('Sample')
             plt.ylabel('STD(f)')
             plt.grid(linestyle=':')
-            plt.plot(samples, S)
+            plt.plot(samples, s)
 
             plt.subplot(326)
             plt.xlabel('Freq')
             plt.ylabel('STD(f)')
             plt.grid(linestyle=':')
-            plt.plot(freqs, S)
+            plt.plot(freqs, s)
 
             # plt.subplot(616)
             # plt.xlabel('Freq')
@@ -130,8 +153,7 @@ def process1(figure, t, data):
             # plt.grid(linestyle=':')
             # plt.bar(freqs, C)
 
-        out += (nf.ifft(fft_data).real * (end -begin) * 32768.0).tolist()
-
+        out += (nf.ifft(fft_data).real * (end - begin) * 32768.0).tolist()
         begin = end
         if end + N > len(data):
             end = len(data)
@@ -140,7 +162,13 @@ def process1(figure, t, data):
         counter += 1
 
     print('counter: {}\n'.format(counter))
-    wavfile.write('./{}_out.wav'.format(figure), 8000, np.int16(out))
+    try:
+        wavfile.write('./{}_out.wav'.format(figure), np.int(FS), np.int16(out))
+    except Exception as e:
+        print(out)
+        print('len fft_data: {}'.format(len(fft_data)))
+        print(e)
+        raise (e)
     return (t, out)
 
 def show2(figure, t1, data1, t2, data2):
@@ -196,7 +224,7 @@ def main():
     t2, data2 = process1('bad', t1, data1)
     show2('bad_a', t1, data1, t2, data2)
 
-    t1, data1  = read_wav('./good.wav')
+    t1, data1  = read_wav('./bad_out.wav')
     t2, data2 = process1('good', t1, data1)
     show2('good_a', t1, data1, t2, data2)
     plt.show()
